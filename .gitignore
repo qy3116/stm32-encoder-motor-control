@@ -1,0 +1,28 @@
+# Keil MDK build output
+MDK-ARM/test1/
+MDK-ARM/Objects/
+MDK-ARM/Listings/
+MDK-ARM/DebugConfig/
+
+# Keil generated/user-local files
+MDK-ARM/*.uvguix.*
+MDK-ARM/*.uvgui.*
+MDK-ARM/*.uvoptx
+MDK-ARM/*.lst
+MDK-ARM/*.dep
+MDK-ARM/*.crf
+MDK-ARM/*.o
+MDK-ARM/*.d
+MDK-ARM/*.axf
+MDK-ARM/*.hex
+MDK-ARM/*.htm
+MDK-ARM/*.lnp
+MDK-ARM/*.map
+MDK-ARM/*.sct
+MDK-ARM/*.build_log.htm
+
+# Editor and OS noise
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
