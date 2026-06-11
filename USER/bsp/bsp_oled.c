@@ -176,3 +176,95 @@ void OLED_ShowString(uint8_t x, uint8_t y, const char *str)
         str++;
     }
 }
+
+/**
+ * @brief 计算 10 的 y 次方
+ * @param y 指数
+ * @return 10^y
+ *
+ * @note 例如：
+ *       OLED_Pow10(0) = 1
+ *       OLED_Pow10(1) = 10
+ *       OLED_Pow10(2) = 100
+ */
+static uint32_t OLED_Pow10(uint8_t y)
+{
+    uint32_t result = 1;
+
+    while (y--)
+    {
+        result *= 10;
+    }
+
+    return result;
+}
+
+/**
+ * @brief OLED显示无符号整数
+ * @param x     起始列坐标，范围 0~127
+ * @param y     页坐标，范围 0~7
+ * @param num   要显示的无符号整数
+ * @param len   显示长度，例如 len=4，则 23 显示为 0023
+ *
+ * @note
+ * 使用 F6x8 字库时，每个字符宽 6 列。
+ * 所以每显示一个数字，x 坐标增加 6。
+ */
+void OLED_ShowNum(uint8_t x, uint8_t y, uint32_t num, uint8_t len)
+{
+    uint8_t i;
+    uint8_t digit;
+
+    for (i = 0; i < len; i++)
+    {
+        /*
+            从高位到低位依次取数字。
+
+            例如 num = 1234, len = 4:
+            i = 0 -> 取千位
+            i = 1 -> 取百位
+            i = 2 -> 取十位
+            i = 3 -> 取个位
+        */
+        digit = (num / OLED_Pow10(len - i - 1)) % 10;
+
+        OLED_ShowChar(x + i * 6, y, digit + '0');
+    }
+}
+
+/**
+ * @brief OLED显示有符号整数
+ * @param x     起始列坐标，范围 0~127
+ * @param y     页坐标，范围 0~7
+ * @param num   要显示的有符号整数
+ * @param len   数字部分显示长度，不包含正负号
+ *
+ * @note
+ * 例如：
+ * OLED_ShowSignedNum(0, 0, -23, 4);
+ * 显示：-0023
+ *
+ * OLED_ShowSignedNum(0, 0, 23, 4);
+ * 显示：+0023
+ */
+void OLED_ShowSignedNum(uint8_t x, uint8_t y, int32_t num, uint8_t len)
+{
+    uint32_t abs_num;
+
+    if (num >= 0)
+    {
+        OLED_ShowChar(x, y, '+');
+        abs_num = (uint32_t)num;
+    }
+    else
+    {
+        OLED_ShowChar(x, y, '-');
+        abs_num = (uint32_t)(-num);
+    }
+
+    /*
+        符号占 1 个字符宽度，也就是 6 列。
+        所以数字从 x + 6 开始显示。
+    */
+    OLED_ShowNum(x + 6, y, abs_num, len);
+}

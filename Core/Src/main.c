@@ -1,31 +1,32 @@
 /* USER CODE BEGIN Header */
 /**
-  ******************************************************************************
-  * @file           : main.c
-  * @brief          : Main program body
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2026 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * @file           : main.c
+ * @brief          : Main program body
+ ******************************************************************************
+ * @attention
+ *
+ * Copyright (c) 2026 STMicroelectronics.
+ * All rights reserved.
+ *
+ * This software is licensed under terms that can be found in the LICENSE file
+ * in the root directory of this software component.
+ * If no LICENSE file comes with this software, it is provided AS-IS.
+ *
+ ******************************************************************************
+ */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "tim.h"
 #include "gpio.h"
-#include "bsp_motor.h"
-#include "bsp_oled.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "bsp_motor.h"
+#include "bsp_oled.h"
+#include "bsp_encoder.h"
+#include "bsp_key.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -35,6 +36,10 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#define APP_SAMPLE_PERIOD_MS 100U
+#define APP_SPEED_STEP       10
+#define APP_SPEED_MIN        0
+#define APP_SPEED_MAX        100
 
 /* USER CODE END PD */
 
@@ -47,19 +52,112 @@
 
 /* USER CODE BEGIN PV */
 
+static int16_t encoder_cnt = 0;
+static uint16_t encoder_delta = 0;
+static int16_t target_speed = 0;
+static uint16_t motor_rpm = 0;
+static uint32_t last_sample_time = 0;
 
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-
+static void App_Init(void);
+static void App_HandleKey(void);
+static void App_UpdateEncoder(void);
+static void App_UpdateDisplay(void);
+static int16_t App_ClampSpeed(int16_t speed);
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+/* Initialize all board-level modules used by the application loop. */
+static void App_Init(void)
+{
+  Motor_Init();
+  Encoder_Init();
 
+  OLED_Init();
+  OLED_Clear();
+
+  Motor_SetSpeed(target_speed);
+  last_sample_time = HAL_GetTick();
+
+  App_UpdateDisplay();
+}
+
+/* Convert one key event into a bounded motor speed command. */
+static void App_HandleKey(void)
+{
+  Key_Value_t key_value;
+  int16_t new_speed;
+
+  key_value = Key_Scan();
+  new_speed = target_speed;
+
+  if (key_value == KEY_ADD)
+  {
+    new_speed += APP_SPEED_STEP;
+  }
+  else if (key_value == KEY_SUB)
+  {
+    new_speed -= APP_SPEED_STEP;
+  }
+  else
+  {
+    return;
+  }
+
+  new_speed = App_ClampSpeed(new_speed);
+
+  if (new_speed != target_speed)
+  {
+    target_speed = new_speed;
+    Motor_SetSpeed(target_speed);
+  }
+}
+
+/* Sample the encoder once per application period and derive RPM from delta. */
+static void App_UpdateEncoder(void)
+{
+  encoder_cnt = Encoder_GetCount();
+  encoder_delta = Encoder_GetAbsDelta();
+  motor_rpm = Encoder_CalcRPM(encoder_delta, APP_SAMPLE_PERIOD_MS);
+}
+
+/* Refresh only the text fields used on the first four OLED pages. */
+static void App_UpdateDisplay(void)
+{
+  OLED_ShowString(0, 0, "Speed:");
+  OLED_ShowNum(42, 0, (uint32_t)target_speed, 3);
+
+  OLED_ShowString(0, 1, "Cnt:");
+  OLED_ShowSignedNum(42, 1, encoder_cnt, 5);
+
+  OLED_ShowString(0, 2, "Del:");
+  OLED_ShowNum(30, 2, encoder_delta, 5);
+
+  OLED_ShowString(0, 3, "RPM:");
+  OLED_ShowNum(30, 3, motor_rpm, 5);
+}
+
+/* Keep target speed inside the range accepted by Motor_SetSpeed(). */
+static int16_t App_ClampSpeed(int16_t speed)
+{
+  if (speed > APP_SPEED_MAX)
+  {
+    return APP_SPEED_MAX;
+  }
+
+  if (speed < APP_SPEED_MIN)
+  {
+    return APP_SPEED_MIN;
+  }
+
+  return speed;
+}
 
 /* USER CODE END 0 */
 
@@ -95,18 +193,8 @@ int main(void)
   MX_TIM3_Init();
   MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
-	
-	Motor_Init();
-	
-	OLED_Init();
-	OLED_Clear();
-	
 
-
-	OLED_ShowString(0, 0, "Motor Ready");
-	OLED_ShowString(0, 1, "PWM:500");
-	OLED_ShowString(0, 2, "CNT:1234");
-	OLED_ShowString(0, 3, "RPM:120");
+  App_Init();
 
   /* USER CODE END 2 */
 
@@ -114,11 +202,36 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+    /*
+     * 按键改变target_speed
+     */
+    App_HandleKey();
+    /*
+     * HAL_GetTick() 返回系统运行时间，单位 ms。
+     * 例如系统启动后运行了 12345ms，则 HAL_GetTick() = 12345。
+     */
+    if ((uint32_t)(HAL_GetTick() - last_sample_time) >= APP_SAMPLE_PERIOD_MS)
+    {
+      /*
+       * 更新时间戳。
+       * 这表示这一次转速计算已经完成。
+       */
+      last_sample_time += APP_SAMPLE_PERIOD_MS;
+
+      /*
+       * 每 100ms 调用一次，所以传入 sample_period_ms。
+       */
+      App_UpdateEncoder();
+
+      /*
+      * OLED显示。
+      * 注意：OLED显示放在这里，表示每100ms刷新一次。
+      */
+      App_UpdateDisplay();
+    }
+
     /* USER CODE END WHILE */
 
-		Motor_SetSpeed(20);
-		Motor_Brake();
-		
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */

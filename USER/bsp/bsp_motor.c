@@ -13,7 +13,6 @@
  * 需要与TIM3的ARR保持一致
  * 例如ARR=99，则PWM最大值为100
  */
-#define MOTOR_PWM_MAX 1000
 
 
 
@@ -205,3 +204,4 @@ void Motor_SoftStart(int16_t target_speed)
         }
     }
 }
+

@@ -4,6 +4,11 @@ MDK-ARM/Objects/
 MDK-ARM/Listings/
 MDK-ARM/DebugConfig/
 
+# CMake/Ninja build output
+build/
+out/
+CMakeUserPresets.json
+
 # Keil generated/user-local files
 MDK-ARM/*.uvguix.*
 MDK-ARM/*.uvgui.*

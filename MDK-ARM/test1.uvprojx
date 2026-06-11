@@ -701,6 +701,21 @@
               <FileType>5</FileType>
               <FilePath>..\USER\bsp\oledfont.h</FilePath>
             </File>
+            <File>
+              <FileName>bsp_board.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\USER\bsp\bsp_board.h</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_key.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\USER\bsp\bsp_key.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_key.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\USER\bsp\bsp_key.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
