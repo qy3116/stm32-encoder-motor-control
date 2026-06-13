@@ -44,6 +44,7 @@ target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
 
 # Add sources to executable
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
+    USER/app/app.c
     USER/bsp/bsp_encoder.c
     USER/bsp/bsp_key.c
     USER/bsp/bsp_motor.c
@@ -54,6 +55,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
 
 # Add include paths
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
+    USER/app
     USER/bsp
     USER/algorithm
 )
