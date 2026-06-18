@@ -1,0 +1,26 @@
+# CMake/GCC 生成目录；本工程主要按 MDK-ARM/Keil 使用。
+build/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+compile_commands.json
+
+# Keil 编译输出目录。
+MDK-ARM/FreeRtos/
+MDK-ARM/*.lst
+*.o
+*.d
+*.crf
+*.axf
+*.hex
+*.map
+*.lnp
+*.htm
+*.dep
+
+# Keil 用户本机配置，不适合提交给别人或作为稳定基线。
+*.uvoptx
+*.uvguix.*
+
+# 编辑器本机配置。
+.vscode/
