@@ -57,6 +57,12 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # 应用层还会使用 TB6612 电机驱动和低电平有效按键。
     User/bsp/bsp_motor.c
     User/bsp/bsp_key.c
+
+    # VOFA 串口波形调试输出。
+    User/bsp/bsp_vofa.c
+
+    # 速度闭环使用的 PID 算法模块。
+    User/algorithm/pid.c
 )
 
 # Add include paths
@@ -64,6 +70,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # 让应用层文件可以直接包含 "app.h"、"bsp_oled.h" 等头文件。
     User/app
     User/bsp
+    User/algorithm
 )
 
 # Add project symbols (macros)

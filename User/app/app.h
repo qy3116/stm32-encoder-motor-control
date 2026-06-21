@@ -9,5 +9,6 @@ void App_EncoderTask(void);
 void App_OLEDTask(void);
 void App_KeyTask(void);
 void App_MotorTask(void);
+void App_VofaTask(void);
 
 #endif /* APP_H */

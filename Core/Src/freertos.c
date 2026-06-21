@@ -76,8 +76,15 @@ const osThreadAttr_t KeyTask_attributes = {
 osThreadId_t MotorTaskHandle;
 const osThreadAttr_t MotorTask_attributes = {
   .name = "MotorTask",
-  .stack_size = 128 * 4,
+  .stack_size = 256 * 4,
   .priority = (osPriority_t) osPriorityNormal,
+};
+/* VofaTask 的任务句柄和创建参数，用来周期发送 PID 串口曲线数据。 */
+osThreadId_t VofaTaskHandle;
+const osThreadAttr_t VofaTask_attributes = {
+  .name = "VofaTask",
+  .stack_size = 256 * 4,
+  .priority = (osPriority_t) osPriorityLow,
 };
 /* LEDTask 的任务句柄和创建参数，用来观察调度器是否在运行。 */
 osThreadId_t LEDTaskHandle;
@@ -96,6 +103,7 @@ void StartEncoderTask(void *argument);
 void StartOLEDTask(void *argument);
 void StartKeyTask(void *argument);
 void StartMotorTask(void *argument);
+void StartVofaTask(void *argument);
 void StartLEDTask(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
@@ -144,11 +152,26 @@ void MX_FREERTOS_Init(void) {
   /* 创建电机输出任务。 */
   MotorTaskHandle = osThreadNew(StartMotorTask, NULL, &MotorTask_attributes);
 
+  /* 创建 VOFA 串口调试任务。 */
+  VofaTaskHandle = osThreadNew(StartVofaTask, NULL, &VofaTask_attributes);
+
   /* 创建 LED 心跳任务。 */
   LEDTaskHandle = osThreadNew(StartLEDTask, NULL, &LEDTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
-  /* add threads, ... */
+  /*
+   * 如果 heap 不够，osThreadNew() 会返回 NULL。
+   * 这里主动检查，避免出现“部分任务没创建成功，但程序表面还在跑”的假象。
+   */
+  if ((EncoderTaskHandle == NULL) ||
+      (OLEDTaskHandle == NULL) ||
+      (KeyTaskHandle == NULL) ||
+      (MotorTaskHandle == NULL) ||
+      (VofaTaskHandle == NULL) ||
+      (LEDTaskHandle == NULL))
+  {
+    Error_Handler();
+  }
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
@@ -211,6 +234,20 @@ void StartMotorTask(void *argument)
   /* USER CODE BEGIN StartMotorTask */
   App_MotorTask();
   /* USER CODE END StartMotorTask */
+}
+
+/* USER CODE BEGIN Header_StartVofaTask */
+/**
+* @brief VofaTask 线程入口。
+* @param argument: 未使用
+* @retval None
+*/
+/* USER CODE END Header_StartVofaTask */
+void StartVofaTask(void *argument)
+{
+  /* USER CODE BEGIN StartVofaTask */
+  App_VofaTask();
+  /* USER CODE END StartVofaTask */
 }
 
 /* USER CODE BEGIN Header_StartLEDTask */
